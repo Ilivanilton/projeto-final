@@ -35,7 +35,8 @@ function createApp(options = {}) {
   app.set('trust proxy', 1);
 
   // Cabeçalhos de segurança (CSP, X-Frame-Options, nosniff, etc.)
-  app.use(helmet());
+  // O HSTS é enviado pelo Nginx (camada que termina o HTTPS), por isso é desativado aqui.
+  app.use(helmet({ strictTransportSecurity: false }));
 
   app.use(express.static(path.join(__dirname, '..', 'public')));
   app.use(express.urlencoded({ extended: false, limit: '10kb' }));

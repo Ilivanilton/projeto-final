@@ -149,10 +149,16 @@ Congratulations, all simulated renewals succeeded             # autorrenovação
 
 | Teste | Resultado |
 |---|---|
-| [SSL.org – SSL Certificate Checker](https://www.ssl.org/) | Certificate Trusted: **YES** · Good signature · Acceptable key (ECDSA P-256) |
-| [DigiCert – TLS quantum readiness](https://www.digicert.com/pqc-checker) | PQC **ativado** (X25519MLKEM768) |
+| [SSL.org – SSL Certificate Checker](https://www.ssl.org/) | Certificate Trusted: **Yes** · sha384 / EC 256 bits · **Good signature · Good key** · TLS 1.2 e 1.3 |
+| [DigiCert – TLS quantum readiness](https://www.digicert.com/pqc-checker) | **Pass**: TLS 1.3 habilitado + troca de chaves *quantum-safe* (ML-KEM) |
 
-<!-- Prints: docs/ssl-org.png e docs/digicert-pqc.png -->
+**SSL.org — SSL Certificate Checker**
+
+![Resultado SSL.org](docs/ssl-org.png)
+
+**DigiCert — TLS quantum readiness check**
+
+![Resultado DigiCert PQC](docs/digicert-pqc.png)
 
 ---
 

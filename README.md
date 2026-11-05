@@ -99,6 +99,28 @@ aws ec2 allocate-address --domain vpc
 aws ec2 associate-address --instance-id <id> --allocation-id <eipalloc>
 ```
 
+#### Evidências na console AWS
+
+**Instância** `projeto-final-web`: executando, `t3.micro`, Elastic IP, IMDSv2 *Required*
+
+![Instância EC2](docs/aws-instancia.png)
+
+**Security Group** `projeto-final-sg`: entrada apenas nas portas 22, 80 e 443
+
+![Security Group](docs/aws-security-group.png)
+
+**Par de chaves** `projeto-final-admin` (ed25519)
+
+![Key Pair](docs/aws-key-pair.png)
+
+**Elastic IP** `18.189.71.156` associado à instância
+
+![Elastic IP](docs/aws-elastic-ip.png)
+
+**Disco (EBS) criptografado**
+
+![Disco criptografado](docs/aws-disco.png)
+
 Em seguida, o servidor foi configurado com o script [infra/provision.sh](infra/provision.sh):
 
 ```bash
@@ -172,6 +194,10 @@ Congratulations, all simulated renewals succeeded             # autorrenovação
 - A senha é armazenada **apenas como hash bcrypt**, gerado por [scripts/hash-password.js](scripts/hash-password.js).
 - A pipeline executa o **gitleaks** em todo push, que falha se encontrar algum segredo.
 - **Dependabot** ([.github/dependabot.yml](.github/dependabot.yml)) monitora dependências vulneráveis.
+
+**2FA ativado na conta GitHub:**
+
+![2FA GitHub](docs/github-2fa.png)
 
 ---
 
@@ -283,6 +309,14 @@ graph LR
 
 Boas práticas na pipeline: `permissions: contents: read` (token com privilégio mínimo), deploy só ocorre se os
 testes e as verificações de segurança passarem, a chave é apagada do runner ao final e nenhuma credencial aparece no `.yml`.
+
+**Secrets cadastrados** (o valor nunca é exibido pelo GitHub):
+
+![GitHub Secrets](docs/github-secrets.png)
+
+**Pipeline executada com sucesso** após `git push origin main` (job de testes → job de deploy):
+
+![GitHub Actions](docs/github-actions.png)
 
 ---
 

@@ -1,7 +1,7 @@
 # /etc/fail2ban/jail.local
 # Proteção da porta 22: 4 erros => banimento por 24 horas.
 [DEFAULT]
-backend  = systemd
+backend   = systemd
 banaction = ufw
 
 [sshd]
@@ -10,3 +10,9 @@ port     = 22
 maxretry = 4
 findtime = 10m
 bantime  = 24h
+# Debian 13 / OpenSSH 10: as falhas de login são registradas pelo processo "sshd-session".
+# O padrão do Debian (jail.d/defaults-debian.conf) só observa "sshd" e não detectaria nenhuma falha.
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd + _COMM=sshd-session
+# Como a senha está desabilitada, quem tenta entrar sem a chave gera
+# "Connection closed by authenticating user ... [preauth]", que só é contado no modo aggressive.
+mode     = aggressive

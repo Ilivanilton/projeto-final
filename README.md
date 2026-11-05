@@ -135,7 +135,7 @@ ssh -i ~/.ssh/projeto-final-admin admin@18.189.71.156 'sudo bash /tmp/infra/prov
 | Requisito | Como foi atendido | Arquivo |
 |---|---|---|
 | SSH só por chave | `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, `PermitRootLogin no`, `AuthenticationMethods publickey` | [infra/ssh/99-hardening.conf](infra/ssh/99-hardening.conf) |
-| Fail2Ban na porta 22 | `maxretry = 4`, `bantime = 24h` | [infra/fail2ban/jail.local](infra/fail2ban/jail.local) |
+| Fail2Ban na porta 22 | `maxretry = 4`, `bantime = 24h`, `mode = aggressive`, observando `sshd` **e** `sshd-session` (ver nota abaixo) | [infra/fail2ban/jail.local](infra/fail2ban/jail.local) |
 | Least Privilege (rede) | Security Group + UFW liberando apenas 22/80/443 | [infra/provision.sh](infra/provision.sh) |
 | Least Privilege (processos) | app roda como usuário `app` (sem shell), serviço systemd com `ProtectSystem=strict`, `NoNewPrivileges` | [infra/systemd/projeto-final.service](infra/systemd/projeto-final.service) |
 | Deploy com privilégio mínimo | usuário `deploy` só pode executar `systemctl restart projeto-final` | [infra/sudoers/deploy](infra/sudoers/deploy) |
@@ -154,6 +154,12 @@ admin@18.189.71.156: Permission denied (publickey).          # senha recusada
 $ sudo fail2ban-client get sshd maxretry   ->  4
 $ sudo fail2ban-client get sshd bantime    ->  86400          # 24 horas
 
+# Teste real: 5 tentativas de login sem chave a partir de um IP de teste
+[sshd] Found 172.31.35.41  (x4)
+[sshd] Ban 172.31.35.41
+$ sudo ufw status
+Anywhere   REJECT   172.31.35.41   # by Fail2Ban after 4 attempts against sshd
+
 $ curl -I http://18.189.71.156/
 HTTP/1.1 301 Moved Permanently                                # redireciona para HTTPS
 
@@ -166,6 +172,16 @@ Verify return code: 0 (ok)                                    # certificado conf
 $ sudo certbot renew --dry-run
 Congratulations, all simulated renewals succeeded             # autorrenovação OK
 ```
+
+> **🔎 Problema encontrado e corrigido durante a auditoria (Fail2Ban "cego"):**
+> no Debian 13 / OpenSSH 10 as falhas de login são registradas pelo processo **`sshd-session`**, mas a
+> configuração padrão do Debian (`/etc/fail2ban/jail.d/defaults-debian.conf`) só observa `_COMM=sshd`.
+> Resultado: o Fail2Ban aparecia como ativo, porém contava **0 falhas** mesmo com tentativas reais no log.
+> Além disso, com a senha desabilitada, uma tentativa sem chave gera apenas
+> `Connection closed by authenticating user ... [preauth]`, que só é contada no **modo `aggressive`**
+> (validado com `fail2ban-regex`: modo normal = 0 detecções, aggressive = 12).
+> A correção ([infra/fail2ban/jail.local](infra/fail2ban/jail.local)) inclui `_COMM=sshd-session` e `mode = aggressive`,
+> e foi validada com o teste de banimento acima.
 
 **Testes externos exigidos:**
 

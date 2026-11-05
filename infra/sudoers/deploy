@@ -1,0 +1,3 @@
+# /etc/sudoers.d/deploy
+# O usuário de deploy (GitHub Actions) só pode reiniciar o serviço da aplicação.
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart projeto-final, /usr/bin/systemctl is-active projeto-final

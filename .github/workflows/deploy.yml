@@ -1,0 +1,88 @@
+name: CI/CD - Deploy em produção
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Privilégio mínimo para o token do GitHub
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: Testes e verificações de segurança
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+      - name: Auditoria de dependências (produção)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Varredura de segredos (gitleaks)
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.24.3 git /repo --redact --verbose
+
+  deploy:
+    name: Deploy na AWS (EC2 / Nginx)
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: producao
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar chave SSH (a partir dos GitHub Secrets)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Enviar código para o servidor
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          rsync -rlptz --delete \
+            --exclude '.git/' --exclude '.github/' --exclude 'node_modules/' \
+            --exclude 'test/' --exclude 'infra/' --exclude '.env*' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            ./ "$SSH_USER@$SSH_HOST:/opt/projeto-final/"
+
+      - name: Instalar dependências e reiniciar a aplicação
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            'cd /opt/projeto-final && npm ci --omit=dev --no-audit --no-fund && sudo /usr/bin/systemctl restart projeto-final && sleep 2 && sudo /usr/bin/systemctl is-active projeto-final'
+
+      - name: Verificar se a aplicação está no ar (HTTPS)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://$SSH_HOST/login" -o /dev/null
+          echo "Aplicação no ar em https://$SSH_HOST"
+
+      - name: Remover chave SSH do runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

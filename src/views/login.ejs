@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Projeto Final</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Acesso ao sistema</h1>
+    <p class="sub">Projeto Aplicado: Práticas de Mercado</p>
+
+    <% if (erro) { %>
+      <p class="alerta" role="alert"><%= erro %></p>
+    <% } %>
+
+    <form method="post" action="/login" autocomplete="off">
+      <label for="usuario">Usuário</label>
+      <input id="usuario" name="usuario" type="text" maxlength="32" required autofocus value="<%= usuario %>">
+
+      <label for="senha">Senha</label>
+      <input id="senha" name="senha" type="password" maxlength="128" required>
+
+      <button type="submit">Entrar</button>
+    </form>
+  </main>
+</body>
+</html>

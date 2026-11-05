@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel - Projeto Final</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Painel interno</h1>
+    <p>Olá, <strong><%= usuario %></strong>! Você está autenticado.</p>
+    <p class="sub">Login realizado em <%= loginEm %>.</p>
+
+    <ul class="lista">
+      <li>Esta página só é acessível após o login.</li>
+      <li>Sua sessão expira automaticamente em 30 minutos.</li>
+      <li>Conexão protegida por HTTPS com criptografia pós-quântica.</li>
+    </ul>
+
+    <form method="post" action="/logout">
+      <button type="submit" class="sair">Sair (Logout)</button>
+    </form>
+  </main>
+</body>
+</html>

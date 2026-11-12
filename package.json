@@ -30,6 +30,6 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
-    "supertest": "^7.3.1"
+    "supertest": "^7.3.2"
   }
 }
